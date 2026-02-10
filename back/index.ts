@@ -1,28 +1,60 @@
-import express from 'express';
-import connectDB from './config/db';
-import authRoutes from './routes/authRoutes';
+import express, { Request, Response } from 'express';
+import session from 'express-session';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import connectDB from './config/db';
+import passport from 'passport';
+import './passport'; // Your Passport Strategy configuration
+import authRoutes from './routes/authRoutes';
+
+dotenv.config();
 
 const app = express();
+
+// 1. Global Middleware
 app.use(cors());
-dotenv.config();
 app.use(express.json());
+
+// 2. Session & Passport Middleware (Order matters!)
+app.use(session({ 
+  secret: process.env.SESSION_SECRET || 'your_secret', 
+  resave: false, 
+  saveUninitialized: false 
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// 3. Routes
 app.use('/api/auth', authRoutes);
 
+// Google Auth Trigger
+app.get('/auth/google', 
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
 
-// Create an async function so we can use 'await'
+// Google Auth Callback
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req: Request, res: Response) => {
+    // Redirect to your frontend dashboard
+    res.redirect('http://localhost:3000/dashboard'); 
+  }
+);
+
+// 4. Start Server Logic
 async function startApp() {
   try {
-    // 1. We WAIT here until the DB is actually connected
+    // Wait for DB connection
     await connectDB(); 
     
-    // 2. ONLY then do we start the server
-    app.listen(3001, () => {
-      console.log("🚀 Database connected and server running on port 3001");
+    const PORT = process.env.PORT || 3001;
+    app.listen(PORT, () => {
+      console.log(`🚀 Database connected and server running on port ${PORT}`);
     });
   } catch (err) {
     console.error("❌ Failed to start the app:", err);
+    process.exit(1);
   }
 }
 
