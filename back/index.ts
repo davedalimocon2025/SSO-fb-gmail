@@ -38,7 +38,7 @@ app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
   (req: Request, res: Response) => {
     // Redirect to your frontend dashboard
-    res.redirect('http://localhost:3000/dashboard'); 
+    res.redirect('http://localhost:5173/'); 
   }
 );
 
