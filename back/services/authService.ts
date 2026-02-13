@@ -17,3 +17,17 @@ export const registerUser = async (userData: Partial<IUser>) => {
 
   return await newUser.save();
 };
+
+// services/authService.ts
+export const getAuthenticatedUser = (user: Express.User | undefined) => {
+  if (!user) return null;
+
+  // You can clean up the Google profile here so you don't send 
+  // sensitive tokens back to the frontend.
+  return {
+    id: (user as any).id,
+    name: (user as any).displayName,
+    email: (user as any).emails?.[0]?.value,
+    photos: (user as any).photos?.[0]?.value
+  };
+};

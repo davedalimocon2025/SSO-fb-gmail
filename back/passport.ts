@@ -17,6 +17,7 @@ passport.use(new GoogleStrategy({
       // const user = await User.findOrCreate({ googleId: profile.id });
       
       // For now, we just pass the profile through
+      console.log("Google Profile:", profile);
       return done(null, profile);
     } catch (error) {
       return done(error as Error, undefined);

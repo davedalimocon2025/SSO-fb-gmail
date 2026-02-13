@@ -12,7 +12,10 @@ dotenv.config();
 const app = express();
 
 // 1. Global Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // Your React URL
+  credentials: true,               // Required to send cookies back and forth
+}));
 app.use(express.json());
 
 // 2. Session & Passport Middleware (Order matters!)
@@ -26,11 +29,17 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // 3. Routes
-app.use('/api/auth', authRoutes);
-
+app.use('/api/auth',authRoutes);
+app.get('/api/hello', (req: Request, res: Response) => {
+  res.json({ message: "Hello from the backend!" });
+});
 // Google Auth Trigger
 app.get('/auth/google', 
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  passport.authenticate('google', 
+    { scope: ['profile', 'email']
+     }
+     // Force account selection on each login
+  )
 );
 
 // Google Auth Callback
@@ -40,6 +49,7 @@ app.get('/auth/google/callback',
     // Redirect to your frontend dashboard
     res.redirect('http://localhost:5173/'); 
   }
+
 );
 
 // 4. Start Server Logic

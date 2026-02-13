@@ -52,3 +52,25 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: "Registration failed", error: error.message });
   }
 };
+
+export const getCurrentUser = (req: Request, res: Response) => {
+  // Check if Passport says the user is authenticated
+  if (req.isAuthenticated()) {
+    const userData = authService.getAuthenticatedUser(req.user);
+    console.log("Authenticated User Data:", userData);
+    return res.status(200).json(userData);
+  }
+
+  return res.status(401).json({ message: "Not logged in" });
+};
+
+export const logoutUser = (req: Request, res: Response) => {
+  req.logout((err) => {
+    if (err) return res.status(500).json({ message: "Logout failed" });
+    
+    req.session.destroy(() => {
+      res.clearCookie('connect.sid');
+      res.status(200).json({ message: "Logged out successfully" });
+    });
+  });
+};
