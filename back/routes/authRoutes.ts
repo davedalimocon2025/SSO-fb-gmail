@@ -13,7 +13,6 @@ router.post('/register', register);
 
 // Endpoint: GET /api/auth/current_user
 router.get('/current_user', getCurrentUser);
-
 // Endpoint: GET /api/auth/logout
 router.get('/logout', logoutUser);
 export default router;
