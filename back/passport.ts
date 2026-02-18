@@ -1,35 +1,53 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import dotenv from 'dotenv';
+import User from './models/User';
 
 dotenv.config();
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      callbackURL: "http://localhost:3001/auth/google/callback",
+      passReqToCallback: true
+    },
+    async (req, accessToken, refreshToken, profile, done) => {
+      try {
+        // This will either update the existing user or create a new one
+        const user = await User.findOneAndUpdate(
+          { googleId: profile.id }, // search condition
+          {
+            $set: {
+              email: profile.emails?.[0]?.value,
+              name: profile.displayName,
+              avatar: profile.photos?.[0]?.value
+            }
+          },
+          {
+            new: true,   // return the updated document
+            upsert: true // create if not found
+          }
+        );
 
-// This "Strategy" tells Passport how to handle Google Login
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID || '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    callbackURL: "http://localhost:3001/auth/google/callback", // Must match Google Console exactly
-    passReqToCallback: true
-  },
-  async (req, accessToken, refreshToken, profile, done) => {
-    try {
-      // Logic for your database goes here:
-      // const user = await User.findOrCreate({ googleId: profile.id });
-      
-      // For now, we just pass the profile through
-      console.log("Google Profile:", profile);
-      return done(null, profile);
-    } catch (error) {
-      return done(error as Error, undefined);
+        return done(null, user);
+      } catch (error) {
+        return done(error as Error, undefined);
+      }
     }
-  }
-));
+  )
+);
 
-// These two are REQUIRED to keep the user logged in via sessions
+
 passport.serializeUser((user: any, done) => {
-  done(null, user);
+  done(null, user._id);
 });
 
-passport.deserializeUser((user: any, done) => {
-  done(null, user);
+passport.deserializeUser(async (id: string, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
 });
